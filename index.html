@@ -1,0 +1,663 @@
+<!doctype html><html lang="ja"><head><meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta http-equiv="Expires" content="0"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>高根公団ZUCCA 勤怠</title>
+<meta name="theme-color" content="#111827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="高根公団ZUCCA 勤怠">
+<link rel="manifest" href="manifest.webmanifest"><!-- v27: 休憩開始15分切り下げ・休憩終了15分繰り上げ・交通費込み支給額表示 -->
+<style>body{font-family:-apple-system,sans-serif;background:#f5f6f8;margin:0;color:#111827}.w{max-width:760px;margin:auto;padding:18px}.top{background:#111827;color:white;padding:18px}.c{background:white;padding:18px;border-radius:18px;margin:14px 0}.g,.m{display:grid;grid-template-columns:1fr 1fr;gap:10px}select,input{width:100%;padding:13px;font-size:17px;box-sizing:border-box;border:1px solid #ddd;border-radius:11px}button{padding:17px;border:0;border-radius:14px;color:white;font-weight:800;font-size:17px}.in{background:#16a34a}.bs{background:#ca8a04}.be{background:#2563eb}.out,.del{background:#dc2626}.admin{background:#111827}.metric{background:#f5f6f8;padding:12px;border-radius:12px}.metric b{display:block;font-size:20px}.hide{display:none}.row{display:flex;gap:8px;flex-wrap:wrap}.row button{padding:10px;font-size:14px}.sr{display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #eee}.sr button{padding:8px;font-size:12px}.tw{overflow:auto}table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:13px}th,td{padding:9px 6px;border-bottom:1px solid #eee;text-align:right}th:first-child,td:first-child{text-align:left}.total{font-weight:800;background:#f5f6f8}.note{font-size:12px;color:#6b7280}.actions button{background:#374151}.actions{margin-top:12px}
+.summaryCards{display:none}
+.payBreak{font-size:12px;color:#4b5563;line-height:1.55;margin-top:4px}
+.payBreak b{color:#111827}
+@media(max-width:640px){
+  .closingTable{display:none}
+  .summaryCards{display:grid;gap:12px}
+  .staffPayCard{background:#f8fafc;border:1px solid #e5e7eb;border-radius:16px;padding:14px}
+  .staffPayHead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:10px}
+  .staffPayName{font-size:19px;font-weight:800}
+  .staffPayTotal{font-size:20px;font-weight:900}
+  .staffPayGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;font-size:13px}
+  .staffPayGrid div{display:flex;justify-content:space-between;gap:8px}
+  .staffPayGrid span{color:#6b7280}
+  .premiumBox{margin-top:10px;padding-top:10px;border-top:1px solid #e5e7eb;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .premiumItem{background:white;border-radius:10px;padding:9px}
+  .premiumItem small{display:block;color:#6b7280}
+  .premiumItem b{font-size:16px}
+}
+
+.payDash{margin-top:14px}
+.payLegend{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.legendItem{border-radius:12px;padding:10px 8px;text-align:center;font-size:12px;font-weight:700}
+.legendBase{background:#eff6ff;color:#1d4ed8}
+.legendOt{background:#fff7ed;color:#c2410c}
+.legendNight{background:#f5f3ff;color:#6d28d9}
+.legendTotal{background:#f0fdf4;color:#15803d}
+.payOverview{display:grid;grid-template-columns:1.1fr repeat(4,1fr);gap:8px;margin:12px 0}
+.overviewBox{background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:10px;font-size:12px}
+.overviewBox small{display:block;color:#6b7280;margin-bottom:4px}
+.overviewBox b{font-size:15px}
+.overviewCount{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800}
+.overviewCount .peopleIcon{width:28px;height:28px;border-radius:50%;background:#eef2ff;display:grid;place-items:center}
+.staffPayCard{background:#fff;border:1px solid #dfe4ea;border-radius:18px;padding:14px;box-shadow:0 2px 8px rgba(17,24,39,.04)}
+.staffPayHead{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.staffIdentity{display:flex;align-items:center;gap:10px}
+.staffAvatar{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#2563eb,#4f46e5);color:white;font-weight:800}
+.staffPayName{font-size:19px;font-weight:850}
+.staffDays{display:inline-block;margin-top:3px;background:#f3f4f6;padding:3px 8px;border-radius:999px;font-size:11px;color:#4b5563}
+.staffPayTotal small{display:block;color:#6b7280;font-size:11px;font-weight:600}
+.staffPayTotal{font-size:22px;font-weight:900;text-align:right}
+.staffStats{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid #e5e7eb;border-radius:12px;overflow:hidden}
+.statCell{padding:9px 5px;text-align:center;background:#fff;border-right:1px solid #e5e7eb}
+.statCell:last-child{border-right:0}
+.statCell small{display:block;color:#6b7280;font-size:10px;margin-bottom:4px}
+.statCell b{font-size:14px}
+.premiumBox{margin-top:10px;padding-top:0;border-top:0;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.premiumItem{border-radius:12px;padding:10px}
+.premiumItem small{display:block;font-size:10px;margin-bottom:4px}
+.premiumItem b{font-size:17px}
+.pBase{background:#eff6ff;color:#1d4ed8}
+.pOt{background:#fff7ed;color:#c2410c}
+.pNight{background:#f5f3ff;color:#6d28d9}
+.payBreak{background:#f8fafc;border-radius:10px;padding:8px 10px;font-size:11px;color:#4b5563;line-height:1.45;margin-top:9px}
+@media(max-width:640px){
+  .payLegend{grid-template-columns:1fr 1fr}
+  .payOverview{grid-template-columns:1fr 1fr}
+  .payOverview .overviewCount{grid-column:1/-1}
+  .staffStats{grid-template-columns:repeat(2,1fr)}
+  .statCell{border-bottom:1px solid #e5e7eb}
+  .statCell:nth-child(even){border-right:0}
+  .statCell:last-child{grid-column:1/-1;border-bottom:0}
+  .premiumBox{grid-template-columns:1fr 1fr}
+  .premiumItem.pBase{grid-column:1/-1}
+}
+
+
+.pTransport{background:#f0fdf4;color:#15803d}
+#transportRows .staffrow{display:grid;grid-template-columns:1fr minmax(130px,220px);align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #e5e7eb}
+#transportRows input{width:100%;box-sizing:border-box}
+
+@media print{body{background:white}.top,.no-print{display:none!important}.c{box-shadow:none;border:0;margin:0;padding:8px}.w{max-width:none;padding:0}}.timeSelectWrap{display:grid;grid-template-columns:minmax(88px,1fr) auto minmax(88px,1fr) auto;gap:6px;align-items:center;flex:1}
+.timeSelectWrap select{width:100%;min-width:0;text-align:center;font-size:18px;font-weight:700;padding:13px 8px}
+.timeUnit{font-size:15px;font-weight:800;color:#4b5563;white-space:nowrap}
+@media(max-width:640px){
+  .timeSelectWrap{grid-template-columns:minmax(76px,1fr) auto minmax(76px,1fr) auto;gap:5px}
+  .timeSelectWrap select{font-size:17px;padding:12px 6px}
+  .timeUnit{font-size:14px}
+}
+/* v37: iPhone punch-edit row readability */
+.editRow{display:grid!important;grid-template-columns:minmax(138px,1.35fr) minmax(250px,2fr) 96px!important;gap:8px!important;align-items:center}
+.editRow>select:first-child{width:100%!important;min-width:138px!important;font-size:17px!important;font-weight:700!important;padding-left:12px!important;padding-right:30px!important}
+.editRow .timeSelectWrap{min-width:250px}
+@media(max-width:640px){
+  .editRow{grid-template-columns:minmax(128px,1.25fr) minmax(210px,2fr) 76px!important;gap:7px!important}
+  .editRow>select:first-child{min-width:128px!important;font-size:16px!important;padding-left:10px!important;padding-right:26px!important}
+  .editRow .timeSelectWrap{min-width:210px}
+}
+@media(max-width:430px){
+  .editRow{grid-template-columns:132px minmax(205px,1fr) 72px!important;gap:6px!important}
+  .editRow>select:first-child{min-width:132px!important;font-size:15px!important}
+}
+
+
+/* v38: mobile-friendly edit layout */
+.editRow{
+  display:grid!important;
+  grid-template-columns:minmax(150px,1.2fr) minmax(260px,2fr) 88px!important;
+  gap:8px!important;
+  align-items:center;
+  padding:8px 0;
+}
+.editRow .punchType{width:100%!important;min-width:150px!important}
+.editRow .deleteWrap{display:flex;justify-content:flex-end}
+.editRow .deleteWrap .del{width:100%;max-width:88px}
+@media(max-width:640px){
+  .editRow{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+    border-bottom:1px solid #e5e7eb;
+    padding:12px 0;
+  }
+  .editRow .punchType{
+    width:100%!important;
+    min-width:0!important;
+    font-size:17px!important;
+    font-weight:800!important;
+  }
+  .editRow .timeSelectWrap{
+    width:100%!important;
+    min-width:0!important;
+    grid-template-columns:minmax(90px,1fr) auto minmax(90px,1fr) auto!important;
+  }
+  .editRow .deleteWrap{justify-content:flex-end}
+  .editRow .deleteWrap .del{width:auto;min-width:88px;max-width:none}
+}
+
+</style></head><body>
+<div class="top"><h2>高根公団ZUCCA 勤怠</h2><div id="clock"></div></div><div class="w">
+<div class="c no-print"><b>スタッフ</b><select id="staff"><option value="">読み込み中...</option></select><p id="status"></p><p id="cloudStatus" class="note">クラウド：未接続（端末内保存で利用中）</p><div class="g"><button class="in" onclick="stamp('出勤')">出勤</button><button class="bs" onclick="stamp('休憩開始')">休憩開始</button><button class="be" onclick="stamp('休憩終了')">休憩終了</button><button class="out" onclick="stamp('退勤')">退勤</button></div><p class="note">出勤は15分単位で繰り上げ／休憩開始は切り下げ／休憩終了は繰り上げ／退勤は切り下げ。修正画面・保存・給与計算も同じ時刻で統一</p></div>
+<div class="c"><b>本日の勤務</b><div id="log"></div><div class="m"><div class="metric">実働<b id="work">--</b></div><div class="metric">休憩<b id="brk">--</b></div><div class="metric">残業（8時間超）<b id="ot">--</b></div><div class="metric">深夜（22時以降）<b id="night">--</b></div></div></div>
+<div class="c"><b>月間勤務（21日〜翌20日）</b><p id="period"></p><div class="tw"><table><thead><tr><th>日付</th><th>実働</th><th>休憩</th><th>残業</th><th>深夜</th></tr></thead><tbody id="monthly"></tbody><tfoot id="totals"></tfoot></table></div></div>
+<div class="c no-print"><b>管理者メニュー</b><div id="pb" class="row"><input id="pin" type="password" placeholder="管理者PIN" style="flex:1"><button class="admin" onclick="login()">開く</button></div><div id="ad" class="hide"><div class="row"><input id="nn" placeholder="新しいスタッフ名" style="flex:1"><button class="admin" onclick="add()">追加</button></div><div id="list"></div><hr><b>クラウド保存</b>
+<p class="note">最初の1回だけ管理者が接続すると、この端末は以後自動で同期します。30秒ごとに他端末の打刻・時給・交通費も自動取得します。ネットが切れても端末内に保存し、復帰後に再同期します。</p>
+<div class="row"><input id="cloudEmail" type="email" placeholder="Supabase Authのメール" style="flex:1"><input id="cloudPassword" type="password" placeholder="パスワード" style="flex:1"></div>
+<div class="row actions"><button onclick="cloudLogin()">クラウド接続</button><button onclick="cloudTest()">接続テスト</button><button onclick="syncCloud(true)">今すぐ同期</button><button onclick="cloudLogout()">切断</button></div>
+<div id="cloudDiag" style="margin-top:10px;padding:12px;border:1px solid #d1d5db;border-radius:12px;background:#f8fafc;white-space:pre-wrap;font-size:13px;line-height:1.55">クラウド診断 v33：待機中</div>
+<p id="cloudAdminMsg" class="note" style="white-space:pre-wrap"></p>
+<hr><b>時給設定</b>
+<p class="note">スタッフごとに時給を登録します。給与目安＝実働×時給＋8時間超の25%割増＋深夜時間の25%割増。</p>
+<div id="wageList"></div>
+<div class="row actions"><button onclick="saveWages()">時給を保存</button></div>
+<p id="wageMsg" class="note"></p>
+<hr><b>交通費設定</b>
+<p class="note">スタッフごとに「1日あたりの交通費」を登録します。締め日集計では 出勤日数 × 1日交通費 を自動加算します。</p>
+<div id="transportRows"></div><div class="row actions"><button onclick="saveTransports()">交通費を保存</button></div><p id="transportMsg" class="note"></p>
+<hr><b>打刻の修正・削除</b><p class="note">スタッフと日付を選んで、過去の出勤・休憩・退勤時刻を「時・分」で見やすく修正できます。分は15分単位（00・15・30・45）です。</p><div class="row"><select id="editStaff" style="flex:1"></select><input id="editDate" type="date" style="flex:1"><button class="admin" onclick="loadEdit()">読み込む</button></div><div id="editRows"></div><div class="row actions"><button onclick="addEditRow()">打刻を追加</button><button onclick="saveEdits()">修正を保存</button></div><p id="editMsg" class="note"></p><hr><b>締め日用・全スタッフ一覧</b>
+<p class="note">スタッフごとに給与内訳をカード表示。残業・深夜の割増金額も色分けして確認できます。</p>
+<div class="payDash">
+  <div class="payLegend">
+    <div class="legendItem legendBase">基本分（実働×時給）</div>
+    <div class="legendItem legendOt">残業割増（+25%）</div>
+    <div class="legendItem legendNight">深夜割増（+25%）</div>
+    <div class="legendItem legendTotal">支給額（交通費込み）</div>
+  </div>
+  <div class="payOverview">
+    <div class="overviewBox overviewCount"><span class="peopleIcon">👥</span><span>登録スタッフ <b id="staffCount">0名</b></span></div>
+    <div class="overviewBox"><small>基本分 合計</small><b id="sumBase">¥0</b></div>
+    <div class="overviewBox"><small>残業割増 合計</small><b id="sumOt">¥0</b></div>
+    <div class="overviewBox"><small>深夜割増 合計</small><b id="sumNight">¥0</b></div>
+    <div class="overviewBox"><small>交通費 合計</small><b id="sumTransport">¥0</b></div>
+    <div class="overviewBox"><small>支給額（交通費込み） 合計</small><b id="sumTotal">¥0</b></div>
+  </div>
+</div>
+<div id="allmonthlyCards" class="summaryCards"></div><div class="tw closingTable"><table><thead><tr><th>スタッフ</th><th>出勤日数</th><th>時給</th><th>実働</th><th>休憩</th><th>残業</th><th>残業割増</th><th>深夜</th><th>深夜割増</th><th>給与目安</th></tr></thead><tbody id="allmonthly"></tbody></table></div><div class="row actions"><button onclick="csv()">CSV出力</button><button onclick="printReport()">PDF/印刷</button></div></div></div>
+<div id="printAll" class="c hide"><h2>全スタッフ 月間勤怠・給与集計</h2><p id="printPeriod"></p><div class="tw"><table><thead><tr><th>スタッフ</th><th>出勤日数</th><th>時給</th><th>実働</th><th>休憩</th><th>残業</th><th>残業割増</th><th>深夜</th><th>深夜割増</th><th>給与目安</th></tr></thead><tbody id="printBody"></tbody><tfoot><tr class="total"><td colspan="9">人件費合計</td><td id="printPayrollTotal">¥0</td></tr></tfoot></table></div></div>
+</div><script>
+// 高根公団ZUCCA Attendance v1 (based on ZUCCA v40) / empty staff start
+// ZUCCA Attendance v39 cloud pull sync fix
+
+// ZUCCA Attendance v31 all-staff calculation/save fix
+
+const PHOTO_STAFF=[];const Q=x=>document.getElementById(x),SK='takanekodan_staff_v1',DK='takanekodan_attendance_v1',DEF=[];
+const SUPABASE_URL="https://nahlnkatdmqinzaskbbp.supabase.co",SUPABASE_KEY="sb_publishable_SNf2lIkK9A5hffq6hHawjw_mogl4wgt";
+const CK='takanekodan_cloud_session_v1',DIRTY='takanekodan_dirty_days_v1',DELETED='takanekodan_deleted_staff_v1',WK='takanekodan_wages_v1',TK='takanekodan_transport_v1';
+let cloudBusy=false;
+
+function cloudSetStatus(msg,ok=true){
+  let text=String(msg||'');
+  let el=Q('cloudStatus');if(el)el.textContent='クラウド：'+text;
+  let ad=Q('cloudAdminMsg');if(ad)ad.textContent=text;
+  let dg=Q('cloudDiag');if(dg){dg.textContent='クラウド診断 v33\n'+text;dg.style.borderColor=ok?'#86efac':'#fca5a5';dg.style.background=ok?'#f0fdf4':'#fef2f2';}
+}
+function cloudSession(){try{return JSON.parse(localStorage.getItem(CK)||'null')}catch(e){return null}}
+function saveCloudSession(s){if(s)localStorage.setItem(CK,JSON.stringify(s));else localStorage.removeItem(CK)}
+async function authFetch(path,opt={}){let s=cloudSession();if(!s?.access_token)throw new Error('クラウド未接続');let h=Object.assign({'apikey':SUPABASE_KEY,'Authorization':'Bearer '+s.access_token,'Content-Type':'application/json'},opt.headers||{});let r=await fetch(SUPABASE_URL+path,Object.assign({},opt,{headers:h}));if(r.status===401&&s.refresh_token){let rr=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});if(rr.ok){let ns=await rr.json();saveCloudSession(ns);h.Authorization='Bearer '+ns.access_token;r=await fetch(SUPABASE_URL+path,Object.assign({},opt,{headers:h}))}}if(!r.ok){let t=await r.text();throw new Error(t||('HTTP '+r.status))}return r}
+function cloudErrorText(err){
+  let raw=String(err?.message||err||'不明なエラー');
+  let msg=raw;
+  try{
+    let j=JSON.parse(raw);
+    msg=j.msg||j.message||j.error_description||j.error||raw;
+  }catch(e){}
+  const low=String(msg).toLowerCase();
+  if(low.includes('invalid login credentials')) return 'メールアドレスまたはパスワードが違います。\nSupabase応答: '+msg;
+  if(low.includes('email not confirmed')) return 'メール認証が完了していません。\nSupabase応答: '+msg;
+  if(low.includes('user not found')) return 'このメールアドレスのユーザーが見つかりません。\nSupabase応答: '+msg;
+  if(low.includes('failed to fetch')||low.includes('network')) return 'Supabaseへ通信できません。\nSupabase応答: '+msg;
+  return msg;
+}
+async function cloudTest(){
+  cloudSetStatus('接続テスト中…');
+  try{
+    let r=await fetch(SUPABASE_URL+'/auth/v1/health',{headers:{'apikey':SUPABASE_KEY}});
+    let body=await r.text();
+    if(!r.ok)throw new Error('HTTP '+r.status+' '+body);
+    cloudSetStatus('Supabaseへの通信は正常です。\n次にメールとパスワードを入力して「クラウド接続」を押してください。');
+    alert('Supabaseへの通信は正常です');
+  }catch(err){
+    let msg='接続テスト失敗：'+cloudErrorText(err);
+    cloudSetStatus(msg,false);
+    alert(msg);
+  }
+}
+async function cloudLogin(){
+  let e=Q('cloudEmail')?.value.trim(),p=Q('cloudPassword')?.value;
+  if(!e||!p){
+    let msg='メールとパスワードを両方入力してください。';
+    cloudSetStatus(msg,false);alert(msg);return;
+  }
+  try{
+    cloudSetStatus('認証中…\nメール: '+e);
+    let r=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{
+      method:'POST',
+      headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},
+      body:JSON.stringify({email:e,password:p})
+    });
+    let body=await r.text();
+    if(!r.ok)throw new Error('HTTP '+r.status+' '+body);
+    let session=JSON.parse(body);
+    if(!session?.access_token)throw new Error('認証応答にaccess_tokenがありません: '+body);
+    saveCloudSession(session);
+    Q('cloudPassword').value='';
+    cloudSetStatus('認証成功 ✓\n勤怠データを同期しています…');
+    await syncCloud(true);
+    cloudSetStatus('認証・同期ともに成功しました ✓');
+    alert('クラウド接続・同期に成功しました');
+  }catch(err){
+    console.error('Cloud login error:',err);
+    let msg='接続失敗：'+cloudErrorText(err);
+    cloudSetStatus(msg,false);
+    alert(msg);
+  }
+}
+
+function cloudLogout(){saveCloudSession(null);cloudSetStatus('未接続（端末内保存で利用中）');}
+function dirtySet(){try{return new Set(JSON.parse(localStorage.getItem(DIRTY)||'[]'))}catch(e){return new Set()}}
+function markDirty(s,d){let z=dirtySet();z.add(s+'|'+d);localStorage.setItem(DIRTY,JSON.stringify([...z]))}
+function clearDirty(s,d){let z=dirtySet();z.delete(s+'|'+d);localStorage.setItem(DIRTY,JSON.stringify([...z]))}
+function deletedStaff(){try{return new Set(JSON.parse(localStorage.getItem(DELETED)||'[]'))}catch(e){return new Set()}}
+function markStaffDeleted(n){let z=deletedStaff();z.add(n);localStorage.setItem(DELETED,JSON.stringify([...z]))}
+function unmarkStaffDeleted(n){let z=deletedStaff();z.delete(n);localStorage.setItem(DELETED,JSON.stringify([...z]))}
+async function cloudReplaceDay(s,d,a){if(!cloudSession())return;await authFetch('/rest/v1/attendance?staff_name=eq.'+encodeURIComponent(s)+'&work_date=eq.'+encodeURIComponent(d),{method:'DELETE',headers:{'Prefer':'return=minimal'}});if(a.length){let rows=a.map((v,i)=>({staff_name:s,work_date:d,punch_type:v[0],punch_time:v[1]+':00',position:i}));await authFetch('/rest/v1/attendance',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(rows)})}clearDirty(s,d)}
+async function cloudSyncStaff(){let local=staff(),w=wages(),tr=transports();for(let i=0;i<local.length;i++){let n=local[i];await authFetch('/rest/v1/staff_members?on_conflict=name',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({name:n,active:true,sort_order:i,hourly_wage:Number(w[n]||0),transport_per_day:Number(tr[n]||0)})});unmarkStaffDeleted(n)}for(let n of deletedStaff()){await authFetch('/rest/v1/staff_members?name=eq.'+encodeURIComponent(n),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({active:false})})}}
+async function fetchCloudAttendance(){let r=await authFetch('/rest/v1/attendance?select=staff_name,work_date,punch_type,punch_time,position,id&order=work_date.asc,position.asc,id.asc');return await r.json()}
+async function fetchCloudStaff(){let r=await authFetch('/rest/v1/staff_members?select=name,active,sort_order,hourly_wage,transport_per_day&order=sort_order.asc,name.asc');return await r.json()}
+function allLocalDays(){let x=JSON.parse(localStorage.getItem(DK)||'{}'),out=[];for(let [s,days] of Object.entries(x))for(let [d,a] of Object.entries(days||{}))if(Array.isArray(a)&&a.length)out.push([s,d,a]);return out}
+async function syncCloud(showMsg=false){
+  if(cloudBusy)return;
+  if(!cloudSession()){
+    if(showMsg)cloudSetStatus('未接続（端末内保存で利用中）',false);
+    return;
+  }
+  cloudBusy=true;
+  try{
+    cloudSetStatus('同期中…');
+    let dirty=dirtySet();
+
+    // 端末で変更した日を先にクラウドへ送る
+    for(let k of [...dirty]){
+      let [s,d]=k.split('|'),
+          x=JSON.parse(localStorage.getItem(DK)||'{}');
+      await cloudReplaceDay(s,d,x[s]?.[d]||[]);
+    }
+
+    let rows=await fetchCloudAttendance();
+    if(!rows.length){
+      for(let [s,d,a] of allLocalDays())await cloudReplaceDay(s,d,a);
+      rows=await fetchCloudAttendance();
+    }
+
+    // クラウドの打刻を端末へ反映
+    let x=JSON.parse(localStorage.getItem(DK)||'{}');
+    let cloudKeys=new Set();
+    for(let r of rows){
+      let sn=r.staff_name,d=r.work_date,t=String(r.punch_time||'').slice(0,5);
+      x[sn]??={};
+      if(!cloudKeys.has(sn+'|'+d)){
+        x[sn][d]=[];
+        cloudKeys.add(sn+'|'+d);
+      }
+      x[sn][d].push([r.punch_type,t]);
+    }
+    localStorage.setItem(DK,JSON.stringify(x));
+
+    // スタッフ・時給・交通費は通常同期ではクラウドを正として取得する。
+    // 別端末の空欄データでクラウドを上書きしない。
+    let sr=await fetchCloudStaff();
+
+    // クラウド側が完全に空の初回だけ、この端末の設定を登録する。
+    if(!sr.length){
+      await cloudSyncStaff();
+      sr=await fetchCloudStaff();
+    }
+
+    let active=sr.filter(v=>v.active).map(v=>v.name);
+    if(active.length)localStorage.setItem(SK,JSON.stringify(active));
+
+    let cw={},ct={};
+    sr.forEach(v=>{
+      if(!v.active)return;
+      let hw=Number(v.hourly_wage||0),tp=Number(v.transport_per_day||0);
+      if(hw>0)cw[v.name]=hw;
+      if(tp>0)ct[v.name]=tp;
+    });
+    localStorage.setItem(WK,JSON.stringify(cw));
+    localStorage.setItem(TK,JSON.stringify(ct));
+
+    rs();
+    cloudSetStatus('同期済み ✓');
+  }catch(err){
+    console.error('syncCloud error:',err);
+    cloudSetStatus('未同期（端末内には保存済み）\n'+cloudErrorText(err),false);
+  }finally{
+    cloudBusy=false;
+  }
+}
+let cloudRetryTimer=null;
+function scheduleCloudRetry(){
+  if(cloudRetryTimer)clearTimeout(cloudRetryTimer);
+  cloudRetryTimer=setTimeout(async()=>{
+    cloudRetryTimer=null;
+    if(cloudSession()&&dirtySet().size)await syncCloud(false);
+  },5000);
+}
+async function cloudAfterDayChange(s,d,a){
+  markDirty(s,d);
+  if(!cloudSession()){
+    cloudSetStatus('未接続（端末内保存で利用中）',false);
+    return;
+  }
+  try{
+    cloudSetStatus('同期中…');
+    await cloudReplaceDay(s,d,a);
+    cloudSetStatus('同期済み ✓');
+  }catch(e){
+    console.error('cloudAfterDayChange error:',e);
+    cloudSetStatus('未同期（端末内には保存済み）\n自動で再試行します。\n'+cloudErrorText(e),false);
+    scheduleCloudRetry();
+  }
+}
+async function cloudAddStaff(n){if(!cloudSession())return;try{await authFetch('/rest/v1/staff_members?on_conflict=name',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({name:n,active:true,sort_order:staff().indexOf(n),hourly_wage:Number(wages()[n]||0),transport_per_day:Number(transports()[n]||0)})});unmarkStaffDeleted(n);cloudSetStatus('同期済み ✓')}catch(e){cloudSetStatus('スタッフ変更は端末内のみ保存',false)}}
+async function cloudDeleteStaff(n){markStaffDeleted(n);if(!cloudSession())return;try{await authFetch('/rest/v1/staff_members?name=eq.'+encodeURIComponent(n),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({active:false})});cloudSetStatus('同期済み ✓')}catch(e){cloudSetStatus('スタッフ変更は端末内のみ保存',false)}}
+
+function wages(){try{let w=JSON.parse(localStorage.getItem(WK)||'{}');return w&&typeof w==='object'?w:{}}catch(e){return {}}}
+function yen(n){return '¥'+Math.round(Number(n)||0).toLocaleString('ja-JP')}
+
+function transports(){try{return JSON.parse(localStorage.getItem(TK)||'{}')}catch(e){return {}}}
+function saveTransport(name,val){
+  let x=transports(),n=Math.max(0,Number(val||0));
+  if(n>0)x[name]=n;else delete x[name];
+  localStorage.setItem(TK,JSON.stringify(x));
+  allSummary();
+}
+async function saveTransports(){
+  let x=transports();
+  document.querySelectorAll('#transportRows input[data-staff]').forEach(inp=>{
+    let v=Math.max(0,Number(inp.value)||0);
+    if(v>0)x[inp.dataset.staff]=v;else delete x[inp.dataset.staff];
+  });
+  localStorage.setItem(TK,JSON.stringify(x));
+  allSummary();
+  if(Q('transportMsg'))Q('transportMsg').textContent='交通費を保存しました';
+  if(cloudSession()){
+    try{
+      await cloudSyncStaff();
+      if(Q('transportMsg'))Q('transportMsg').textContent='交通費を保存・クラウド同期しました ✓';
+      cloudSetStatus('同期済み ✓');
+    }catch(e){
+      if(Q('transportMsg'))Q('transportMsg').textContent='交通費は端末内に保存済み（クラウド同期は未完了）';
+    }
+  }
+}
+
+function payrollDetail(t,wage,transportPerDay=0){
+  wage=Number(wage)||0;
+  transportPerDay=Number(transportPerDay)||0;
+  let work=t[1]||0,ot=t[3]||0,night=t[4]||0;work=Math.floor(work/15)*15;
+  let base=work/60*wage;
+  let overtimePremium=ot/60*wage*.25;
+  let nightPremium=night/60*wage*.25;
+  let transport=(t[0]||0)*transportPerDay;
+  return {base,overtimePremium,nightPremium,transport,transportPerDay,total:base+overtimePremium+nightPremium+transport};
+}
+function payrollFromTotals(t,wage,transportPerDay=0){return payrollDetail(t,wage,transportPerDay).total}
+function renderWages(){let box=Q('wageList');if(!box)return;let w=wages();box.replaceChildren();staff().forEach(n=>{let row=document.createElement('div');row.className='sr';let sp=document.createElement('span');sp.textContent=n;let inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='10';inp.inputMode='numeric';inp.value=w[n]||'';inp.placeholder='時給';inp.dataset.staff=n;inp.style.width='140px';row.append(sp,inp);box.appendChild(row)})}
+async function saveWages(){let w=wages();document.querySelectorAll('#wageList input[data-staff]').forEach(inp=>{let v=Math.max(0,Number(inp.value)||0);if(v>0)w[inp.dataset.staff]=v;else delete w[inp.dataset.staff]});localStorage.setItem(WK,JSON.stringify(w));Q('wageMsg').textContent='時給を保存しました';allSummary();if(cloudSession()){try{await cloudSyncStaff();Q('wageMsg').textContent='時給を保存・クラウド同期しました ✓';cloudSetStatus('同期済み ✓')}catch(e){Q('wageMsg').textContent='時給は端末内に保存済み（クラウド同期は未完了）'}}}
+
+function migrateData(){try{
+  const MK='takanekodan_staff_migrated_v1';
+  let raw=localStorage.getItem(SK),a=raw?JSON.parse(raw):[];
+  if(!Array.isArray(a))a=[];
+  a=[...new Set(a.map(v=>String(v||'').trim()).filter(Boolean))];
+  localStorage.setItem(SK,JSON.stringify(a));
+  if(!localStorage.getItem(MK))localStorage.setItem(MK,'1');
+}catch(e){}}
+function staff(){try{migrateData();const v=JSON.parse(localStorage.getItem(SK)||'[]');return Array.isArray(v)?v:[]}catch(e){return []}} function safe(s){return String(s).replace(/[&<>]/g,'')}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fillStaffSelect(el,names,keep){if(!el)return;el.replaceChildren();names.forEach(n=>{const op=document.createElement('option');op.value=n;op.textContent=n;el.appendChild(op)});if(keep&&names.includes(keep))el.value=keep;else if(names.length)el.selectedIndex=0}
+function rs(){const a=staff();const main=Q('staff');const o=main?main.value:'';fillStaffSelect(main,a,o);if(Q('editStaff')){const eo=Q('editStaff').value;fillStaffSelect(Q('editStaff'),a,eo)}rl();renderWages();render();allSummary()}
+function punchTime(kind){
+  let d=new Date(),h=d.getHours(),m=d.getMinutes();
+
+  if(kind==='出勤'){
+    // 出勤：15分単位で繰り上げ
+    m=Math.ceil(m/15)*15;
+  }else if(kind==='退勤'){
+    // 退勤：15分単位で切り下げ
+    m=Math.floor(m/15)*15;
+  }else if(kind==='休憩開始'){
+    // 休憩開始：15分単位で切り下げ
+    m=Math.floor(m/15)*15;
+  }else if(kind==='休憩終了'){
+    // 休憩終了：15分単位で繰り上げ
+    m=Math.ceil(m/15)*15;
+  }else{
+    m=Math.round(m/15)*15;
+  }
+
+  if(m===60){h++;m=0}
+  if(h<9){h=9;m=0}
+
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')
+}
+function stamp(k){let x=JSON.parse(localStorage.getItem(DK)||'{}'),s=Q('staff').value,day=iso(new Date());if(!s)return;x[s]??={};x[s][day]??=[];x[s][day].push([k,punchTime(k)]);localStorage.setItem(DK,JSON.stringify(x));render();allSummary();cloudAfterDayChange(s,day,x[s][day])}
+function mins(t){let a=t.split(':').map(Number);return a[0]*60+a[1]} function fmt(n){if(n==null)return'--';n=Math.max(0,Math.round(n));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')}
+function roundPunchTime(kind,time){
+  if(!time)return time;
+  let [h,m]=time.split(':').map(Number);
+  if(kind==='出勤' || kind==='休憩終了'){
+    m=Math.ceil(m/15)*15;
+  }else if(kind==='退勤' || kind==='休憩開始'){
+    m=Math.floor(m/15)*15;
+  }
+  if(m===60){h++;m=0}
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+
+function calc(a){
+  // 計算時も、出勤↑・休憩開始↓・休憩終了↑・退勤↓ の15分ルールを必ず適用
+  let aa=(a||[]).map(v=>[v[0],roundPunchTime(v[0],v[1])]);
+  // 修正画面や旧データで「出勤」が2回になっている場合、退勤が無ければ最後の出勤を退勤として扱う。
+  // これにより休憩なしの「出勤→退勤」だけの日も全スタッフ共通で実働計算できる。
+  if(!aa.some(v=>v[0]==='退勤')){
+    let ins=[];aa.forEach((v,i)=>{if(v[0]==='出勤')ins.push(i)});
+    if(ins.length>=2)aa[ins[ins.length-1]][0]='退勤';
+  }
+  let ci=aa.find(v=>v[0]=='出勤'),
+      co=[...aa].reverse().find(v=>v[0]=='退勤'),
+      b=0,nb=0,op=null;
+
+  for(let v of aa){
+    if(v[0]=='休憩開始')op=mins(v[1]);
+    if(v[0]=='休憩終了'&&op!=null){
+      let e=mins(v[1]);
+      b+=Math.max(0,e-op);
+      nb+=Math.max(0,e-Math.max(op,1320));
+      op=null;
+    }
+  }
+
+  if(!ci||!co)return[null,b,null,null];
+
+  let st=mins(ci[1]),en=mins(co[1]);
+  if(en<st)en+=1440;
+
+  let work=Math.max(0,en-st-b);
+  work=Math.floor(work/15)*15;
+
+  let overtime=Math.max(0,work-480);
+  overtime=Math.floor(overtime/15)*15;
+
+  let night=Math.max(0,en-Math.max(st,1320)-nb);
+  night=Math.floor(night/15)*15;
+
+  return[work,b,overtime,night];
+}
+function range(){let n=new Date(),s=n.getDate()>=21?new Date(n.getFullYear(),n.getMonth(),21):new Date(n.getFullYear(),n.getMonth()-1,21);return[s,new Date(s.getFullYear(),s.getMonth()+1,20)]}
+function render(){let x=JSON.parse(localStorage.getItem(DK)||'{}'),s=Q('staff').value,d=iso(new Date()),a=x[s]?.[d]||[];Q('log').innerHTML=a.map(v=>'<p>'+v[0]+' <b>'+v[1]+'</b></p>').join('')||'<p>まだ打刻はありません</p>';Q('status').textContent=a.length?'最後：'+a[a.length-1][0]:'未打刻';let c=calc(a);['work','brk','ot','night'].forEach((z,i)=>Q(z).textContent=fmt(c[i]));month(x,s)}
+function month(x,s){let [st,en]=range(),d=new Date(st),rows=[],tot=[0,0,0,0];Q('period').textContent=iso(st)+' ～ '+iso(en);while(d<=en){let k=iso(d),a=x[s]?.[k]||[];if(a.length){let c=calc(a);rows.push('<tr><td>'+(d.getMonth()+1)+'/'+d.getDate()+'</td>'+c.map(v=>'<td>'+fmt(v)+'</td>').join('')+'</tr>');c.forEach((v,i)=>{if(v!=null)tot[i]+=v})}d.setDate(d.getDate()+1)}Q('monthly').innerHTML=rows.join('')||'<tr><td colspan="5">この期間の打刻はありません</td></tr>';Q('totals').innerHTML='<tr class="total"><td>合計</td>'+tot.map(v=>'<td>'+fmt(v)+'</td>').join('')+'</tr>'}
+function staffTotal(x,s){let [st,en]=range(),d=new Date(st),tot=[0,0,0,0],days=0;while(d<=en){let a=x[s]?.[iso(d)]||[];if(a.some(v=>v[0]==='出勤'))days++;let c=calc(a);c.forEach((v,i)=>{if(v!=null)tot[i]+=v});d.setDate(d.getDate()+1)}return [days,...tot]}
+
+function renderTransportRows(){
+  let box=Q('transportRows'); if(!box)return;
+  let x=transports(); box.replaceChildren();
+  staff().forEach(n=>{
+    let row=document.createElement('div');row.className='staffrow';
+    let sp=document.createElement('span');sp.textContent=n;
+    let inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='1';inp.inputMode='numeric';
+    inp.value=x[n]||'';inp.placeholder='1日交通費';inp.dataset.staff=n;
+    row.append(sp,inp);box.appendChild(row);
+  });
+}
+
+function allSummary(){
+  let x=JSON.parse(localStorage.getItem(DK)||'{}'),w=wages(),tr=transports();
+  let grand=0,sumBase=0,sumOt=0,sumNight=0,sumTransport=0,tableRows=[],cards=[];
+  let members=staff();
+  members.forEach(name=>{
+    let t=staffTotal(x,name),rate=Number(w[name]||0),transportPerDay=Number(tr[name]||0),p=payrollDetail(t,rate,transportPerDay);
+    grand+=p.total;sumBase+=p.base;sumOt+=p.overtimePremium;sumNight+=p.nightPremium;sumTransport+=p.transport;
+    tableRows.push('<tr><td>'+safe(name)+'</td><td>'+t[0]+'</td><td>'+yen(rate)+'</td><td>'+fmt(t[1])+'</td><td>'+fmt(t[2])+'</td><td>'+fmt(t[3])+'</td><td>'+yen(p.overtimePremium)+'</td><td>'+fmt(t[4])+'</td><td>'+yen(p.nightPremium)+'</td><td>'+yen(p.total)+'</td></tr>');
+    let initial=safe(name).charAt(0);
+    cards.push(
+      '<div class="staffPayCard">'+
+        '<div class="staffPayHead">'+
+          '<div class="staffIdentity"><div class="staffAvatar">'+initial+'</div><div><div class="staffPayName">'+safe(name)+'</div><span class="staffDays">出勤日数 '+t[0]+'日</span></div></div>'+
+          '<div class="staffPayTotal"><small>支給額（交通費込み）</small>'+yen(p.total)+'</div>'+
+        '</div>'+
+        '<div class="staffStats">'+
+          '<div class="statCell"><small>時給</small><b>'+yen(rate)+'</b></div>'+
+          '<div class="statCell"><small>実働</small><b>'+fmt(t[1])+'</b></div>'+
+          '<div class="statCell"><small>休憩</small><b>'+fmt(t[2])+'</b></div>'+
+          '<div class="statCell"><small>残業時間</small><b>'+fmt(t[3])+'</b></div>'+
+          '<div class="statCell"><small>深夜時間</small><b>'+fmt(t[4])+'</b></div>'+
+        '</div>'+
+        '<div class="premiumBox">'+
+          '<div class="premiumItem pBase"><small>基本分（実働×時給）</small><b>'+yen(p.base)+'</b></div>'+
+          '<div class="premiumItem pOt"><small>残業割増分（+25%）</small><b>'+yen(p.overtimePremium)+'</b></div>'+
+          '<div class="premiumItem pNight"><small>深夜割増分（+25%）</small><b>'+yen(p.nightPremium)+'</b></div>'+
+          '<div class="premiumItem pTransport"><small>交通費（'+t[0]+'日 × '+yen(p.transportPerDay)+'）</small><b>'+yen(p.transport)+'</b></div>'+
+        '</div>'+
+        '<div class="payBreak">計算式：基本分 '+yen(p.base)+' ＋ 残業割増 '+yen(p.overtimePremium)+' ＋ 深夜割増 '+yen(p.nightPremium)+' ＋ 交通費 '+yen(p.transport)+' ＝ <b>支給額（交通費込み） '+yen(p.total)+'</b></div>'+
+      '</div>'
+    );
+  });
+  Q('allmonthly').innerHTML=tableRows.join('');
+  if(Q('allmonthlyCards'))Q('allmonthlyCards').innerHTML=cards.join('');
+  Q('printBody').innerHTML=tableRows.join('');
+  if(Q('printPayrollTotal'))Q('printPayrollTotal').textContent=yen(grand);
+  if(Q('staffCount'))Q('staffCount').textContent=members.length+'名';
+  if(Q('sumBase'))Q('sumBase').textContent=yen(sumBase);
+  if(Q('sumOt'))Q('sumOt').textContent=yen(sumOt);
+  if(Q('sumNight'))Q('sumNight').textContent=yen(sumNight);
+  if(Q('sumTransport'))Q('sumTransport').textContent=yen(sumTransport);
+  if(Q('sumTotal'))Q('sumTotal').textContent=yen(grand);
+  renderTransportRows();
+  let r=range();Q('printPeriod').textContent=iso(r[0])+' ～ '+iso(r[1]);
+}
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+function defaultEditDate(){if(Q('editDate')&&!Q('editDate').value)Q('editDate').value=iso(new Date())}
+function loadEdit(){defaultEditDate();let x=JSON.parse(localStorage.getItem(DK)||'{}'),s=Q('editStaff').value,d=Q('editDate').value,a=(x[s]?.[d]||[]).map(v=>[v[0],v[1]]);window._zuccaEdit=a;renderEditRows();Q('editMsg').textContent=a.length?'打刻を読み込みました':'この日の打刻はありません。必要なら「打刻を追加」できます。'}
+
+function setEditHour(i,h){
+  let cur=(window._zuccaEdit[i]&&window._zuccaEdit[i][1])||'09:00';
+  let mm=cur.split(':')[1]||'00';
+  window._zuccaEdit[i][1]=h+':'+mm;
+}
+function setEditMinute(i,m){
+  let cur=(window._zuccaEdit[i]&&window._zuccaEdit[i][1])||'09:00';
+  let hh=cur.split(':')[0]||'09';
+  window._zuccaEdit[i][1]=hh+':'+m;
+}
+
+function renderEditRows(){
+  let a=window._zuccaEdit||[];
+  const hours=Array.from({length:24},(_,h)=>String(h).padStart(2,'0'));
+  const mins15=['00','15','30','45'];
+
+  Q('editRows').innerHTML=a.map((v,i)=>{
+    let normalized=roundPunchTime(v[0],v[1]||'09:00');
+    let parts=normalized.split(':');
+    let hh=parts[0],mm=parts[1];
+    window._zuccaEdit[i][1]=normalized;
+
+    let hourOptions=hours.map(h=>'<option value="'+h+'"'+(h===hh?' selected':'')+'>'+h+'</option>').join('');
+    let minOptions=mins15.map(m=>'<option value="'+m+'"'+(m===mm?' selected':'')+'>'+m+'</option>').join('');
+
+    return '<div class="editRow">'+
+      '<select class="punchType" onchange="_zuccaEdit['+i+'][0]=this.value;_zuccaEdit['+i+'][1]=roundPunchTime(this.value,_zuccaEdit['+i+'][1]);renderEditRows()">'+
+        '<option'+(v[0]=='出勤'?' selected':'')+'>出勤</option>'+
+        '<option'+(v[0]=='休憩開始'?' selected':'')+'>休憩開始</option>'+
+        '<option'+(v[0]=='休憩終了'?' selected':'')+'>休憩終了</option>'+
+        '<option'+(v[0]=='退勤'?' selected':'')+'>退勤</option>'+
+      '</select>'+
+      '<div class="timeSelectWrap">'+
+        '<select aria-label="時" onchange="setEditHour('+i+',this.value)">'+hourOptions+'</select>'+
+        '<span class="timeUnit">時</span>'+
+        '<select aria-label="分" onchange="setEditMinute('+i+',this.value)">'+minOptions+'</select>'+
+        '<span class="timeUnit">分</span>'+
+      '</div>'+
+      '<div class="deleteWrap"><button class="del" onclick="deleteEditRow('+i+')">削除</button></div>'+
+    '</div>';
+  }).join('')||'<p class="note">打刻なし</p>';
+}
+function addEditRow(){window._zuccaEdit=window._zuccaEdit||[];window._zuccaEdit.push(['出勤','09:00']);renderEditRows()}
+function deleteEditRow(i){if(!confirm('この打刻を削除しますか？'))return;window._zuccaEdit.splice(i,1);renderEditRows()}
+function saveEdits(){
+  defaultEditDate();let s=Q('editStaff').value,d=Q('editDate').value;if(!s||!d)return;let a=(window._zuccaEdit||[]).filter(v=>v[0]&&v[1]).map(v=>[v[0],roundPunchTime(v[0],v[1])]);window._zuccaEdit=a;let x=JSON.parse(localStorage.getItem(DK)||'{}');x[s]??={};if(a.length)x[s][d]=a;else if(x[s])delete x[s][d];localStorage.setItem(DK,JSON.stringify(x));Q('editMsg').textContent='保存しました。実働・残業・深夜・月間合計を再計算しました。';render();allSummary();cloudAfterDayChange(s,d,a)}
+function login(){if(Q('pin').value==='1234'){Q('pb').classList.add('hide');Q('ad').classList.remove('hide');defaultEditDate();rs();rl();renderWages();allSummary()}else alert('PINが違います')}
+function add(){let n=Q('nn').value.trim(),a=staff();if(!n||a.includes(n))return;a.push(n);localStorage.setItem(SK,JSON.stringify(a));unmarkStaffDeleted(n);Q('nn').value='';rs();cloudAddStaff(n)} function del(n){if(confirm(n+'を削除しますか？')){localStorage.setItem(SK,JSON.stringify(staff().filter(x=>x!==n)));rs();cloudDeleteStaff(n)}}
+async function renameStaff(oldn){
+  let newn=prompt('新しいスタッフ名を入力してください',oldn);if(newn==null)return;newn=newn.trim();
+  if(!newn||newn===oldn)return;
+  let a=staff();if(a.includes(newn)){alert('同じ名前のスタッフがすでにいます');return}
+  if(!confirm(oldn+' → '+newn+' に変更しますか？\n過去の勤怠データ・時給・交通費も新しい名前に統一します。'))return;
+  try{
+    let idx=a.indexOf(oldn);if(idx>=0)a[idx]=newn;localStorage.setItem(SK,JSON.stringify(a));
+    let d=JSON.parse(localStorage.getItem(DK)||'{}');if(d[oldn]){d[newn]=d[oldn];delete d[oldn];localStorage.setItem(DK,JSON.stringify(d))}
+    let w=wages();if(Object.prototype.hasOwnProperty.call(w,oldn)){w[newn]=w[oldn];delete w[oldn];localStorage.setItem(WK,JSON.stringify(w))}
+    let tr=transports();if(Object.prototype.hasOwnProperty.call(tr,oldn)){tr[newn]=tr[oldn];delete tr[oldn];localStorage.setItem(TK,JSON.stringify(tr))}
+    if(cloudSession()){
+      let sr=await fetchCloudStaff(),old=sr.find(v=>v.name===oldn)||{};
+      await authFetch('/rest/v1/staff_members?on_conflict=name',{method:'POST',headers:{'Prefer':'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({name:newn,active:true,sort_order:Number(old.sort_order??idx),hourly_wage:Number(old.hourly_wage||w[newn]||0),transport_per_day:Number(old.transport_per_day||tr[newn]||0)})});
+      await authFetch('/rest/v1/attendance?staff_name=eq.'+encodeURIComponent(oldn),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({staff_name:newn})});
+      await authFetch('/rest/v1/staff_members?name=eq.'+encodeURIComponent(oldn),{method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify({active:false})});
+      unmarkStaffDeleted(newn);markStaffDeleted(oldn);cloudSetStatus('名前変更をクラウド同期しました ✓');
+    }
+    rs();alert('名前を変更しました：'+oldn+' → '+newn);
+  }catch(e){console.error(e);alert('端末内の名前は変更しましたが、クラウド更新に失敗しました。接続を確認して「今すぐ同期」を押してください。');rs()}
+}
+function rl(){const box=Q('list');box.replaceChildren();staff().forEach(n=>{const row=document.createElement('div');row.className='sr';const sp=document.createElement('span');sp.textContent=n;const edit=document.createElement('button');edit.className='admin';edit.textContent='名前変更';edit.onclick=()=>renameStaff(n);const b=document.createElement('button');b.className='del';b.textContent='削除';b.onclick=()=>del(n);row.append(sp,edit,b);box.appendChild(row)})}
+function csv(){let x=JSON.parse(localStorage.getItem(DK)||'{}'),w=wages(),tr=transports(),r=range(),lines=['スタッフ,期間,出勤日数,時給,実働,休憩,残業,残業割増額,深夜,深夜割増額,交通費,支給額'];staff().forEach(s=>{let t=staffTotal(x,s),rate=Number(w[s]||0),p=payrollDetail(t,rate,Number(tr[s]||0));lines.push('"'+s.replace(/"/g,'""')+'","'+iso(r[0])+'～'+iso(r[1])+'",'+t[0]+','+rate+','+fmt(t[1])+','+fmt(t[2])+','+fmt(t[3])+','+Math.round(p.overtimePremium)+','+fmt(t[4])+','+Math.round(p.nightPremium)+','+Math.round(p.transport)+','+Math.round(p.total))});let blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='高根公団ZUCCA勤怠給与_'+iso(r[0])+'_'+iso(r[1])+'.csv';a.click();URL.revokeObjectURL(a.href)}
+function printReport(){Q('printAll').classList.remove('hide');window.print();setTimeout(()=>Q('printAll').classList.add('hide'),500)}
+function init(){
+  const st=Q('staff');
+  if(st){
+    st.addEventListener('change',render);
+    st.addEventListener('input',render);
+  }
+  setInterval(()=>{
+    const c=Q('clock');
+    if(c)c.textContent=new Date().toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+  },1000);
+
+  rs();
+
+  if(cloudSession())syncCloud();
+
+  window.addEventListener('focus',()=>{
+    if(cloudSession())syncCloud();
+  });
+  window.addEventListener('online',()=>{
+    if(cloudSession())syncCloud(true);
+  });
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden&&cloudSession())syncCloud();
+  });
+
+  // 30秒ごとにクラウドを確認。
+  // 自分の未同期データ再送だけでなく、他端末の変更も自動で取り込む。
+  setInterval(()=>{
+    if(cloudSession()&&!cloudBusy)syncCloud(false);
+  },30000);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+</script></body></html>
