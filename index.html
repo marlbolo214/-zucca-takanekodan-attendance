@@ -131,11 +131,13 @@
   .editRow .deleteWrap .del{width:auto;min-width:88px;max-width:none}
 }
 
+
+/* 高根公団ZUCCA 勤怠: 勤務時間帯表示＋小数時間表示 */
 </style></head><body>
 <div class="top"><h2>高根公団ZUCCA 勤怠</h2><div id="clock"></div></div><div class="w">
 <div class="c no-print"><b>スタッフ</b><select id="staff"><option value="">読み込み中...</option></select><p id="status"></p><p id="cloudStatus" class="note">クラウド：未接続（端末内保存で利用中）</p><div class="g"><button class="in" onclick="stamp('出勤')">出勤</button><button class="bs" onclick="stamp('休憩開始')">休憩開始</button><button class="be" onclick="stamp('休憩終了')">休憩終了</button><button class="out" onclick="stamp('退勤')">退勤</button></div><p class="note">出勤は15分単位で繰り上げ／休憩開始は切り下げ／休憩終了は繰り上げ／退勤は切り下げ。修正画面・保存・給与計算も同じ時刻で統一</p></div>
-<div class="c"><b>本日の勤務</b><div id="log"></div><div class="m"><div class="metric">実働<b id="work">--</b></div><div class="metric">休憩<b id="brk">--</b></div><div class="metric">残業（8時間超）<b id="ot">--</b></div><div class="metric">深夜（22時以降）<b id="night">--</b></div></div></div>
-<div class="c"><b>月間勤務（21日〜翌20日）</b><p id="period"></p><div class="tw"><table><thead><tr><th>日付</th><th>実働</th><th>休憩</th><th>残業</th><th>深夜</th></tr></thead><tbody id="monthly"></tbody><tfoot id="totals"></tfoot></table></div></div>
+<div class="c"><b>本日の勤務</b><div id="log"></div><p class="note" id="todaySpan">勤務時間：--</p><div class="m"><div class="metric">実働<b id="work">--</b></div><div class="metric">休憩<b id="brk">--</b></div><div class="metric">残業（8時間超）<b id="ot">--</b></div><div class="metric">深夜（22時以降）<b id="night">--</b></div></div></div>
+<div class="c"><b>月間勤務（21日〜翌20日）</b><p id="period"></p><p class="note">時間表示は小数表記です（15分＝0.25／30分＝0.50／45分＝0.75）。</p><div class="tw"><table><thead><tr><th>日付</th><th>勤務時間</th><th>実働</th><th>休憩</th><th>残業</th><th>深夜</th></tr></thead><tbody id="monthly"></tbody><tfoot id="totals"></tfoot></table></div></div>
 <div class="c no-print"><b>管理者メニュー</b><div id="pb" class="row"><input id="pin" type="password" placeholder="管理者PIN" style="flex:1"><button class="admin" onclick="login()">開く</button></div><div id="ad" class="hide"><div class="row"><input id="nn" placeholder="新しいスタッフ名" style="flex:1"><button class="admin" onclick="add()">追加</button></div><div id="list"></div><hr><b>クラウド保存</b>
 <p class="note">最初の1回だけ管理者が接続すると、この端末は以後自動で同期します。30秒ごとに他端末の打刻・時給・交通費も自動取得します。ネットが切れても端末内に保存し、復帰後に再同期します。</p>
 <div class="row"><input id="cloudEmail" type="email" placeholder="Supabase Authのメール" style="flex:1"><input id="cloudPassword" type="password" placeholder="パスワード" style="flex:1"></div>
@@ -171,14 +173,14 @@
 <div id="allmonthlyCards" class="summaryCards"></div><div class="tw closingTable"><table><thead><tr><th>スタッフ</th><th>出勤日数</th><th>時給</th><th>実働</th><th>休憩</th><th>残業</th><th>残業割増</th><th>深夜</th><th>深夜割増</th><th>給与目安</th></tr></thead><tbody id="allmonthly"></tbody></table></div><div class="row actions"><button onclick="csv()">CSV出力</button><button onclick="printReport()">PDF/印刷</button></div></div></div>
 <div id="printAll" class="c hide"><h2>全スタッフ 月間勤怠・給与集計</h2><p id="printPeriod"></p><div class="tw"><table><thead><tr><th>スタッフ</th><th>出勤日数</th><th>時給</th><th>実働</th><th>休憩</th><th>残業</th><th>残業割増</th><th>深夜</th><th>深夜割増</th><th>給与目安</th></tr></thead><tbody id="printBody"></tbody><tfoot><tr class="total"><td colspan="9">人件費合計</td><td id="printPayrollTotal">¥0</td></tr></tfoot></table></div></div>
 </div><script>
-// 高根公団ZUCCA Attendance v1 (based on ZUCCA v40) / empty staff start
+// 高根公団ZUCCA Attendance v2 / cloud-authoritative staff sync fix
 // ZUCCA Attendance v39 cloud pull sync fix
 
 // ZUCCA Attendance v31 all-staff calculation/save fix
 
-const PHOTO_STAFF=[];const Q=x=>document.getElementById(x),SK='takanekodan_staff_v1',DK='takanekodan_attendance_v1',DEF=[];
+const PHOTO_STAFF=[];const Q=x=>document.getElementById(x),SK='takanekodan_staff_v2',DK='takanekodan_attendance_v1',DEF=[];
 const SUPABASE_URL="https://nahlnkatdmqinzaskbbp.supabase.co",SUPABASE_KEY="sb_publishable_SNf2lIkK9A5hffq6hHawjw_mogl4wgt";
-const CK='takanekodan_cloud_session_v1',DIRTY='takanekodan_dirty_days_v1',DELETED='takanekodan_deleted_staff_v1',WK='takanekodan_wages_v1',TK='takanekodan_transport_v1';
+const CK='takanekodan_cloud_session_v1',DIRTY='takanekodan_dirty_days_v1',DELETED='takanekodan_deleted_staff_v1',WK='takanekodan_wages_v2',TK='takanekodan_transport_v2';
 let cloudBusy=false;
 
 function cloudSetStatus(msg,ok=true){
@@ -299,18 +301,14 @@ async function syncCloud(showMsg=false){
     }
     localStorage.setItem(DK,JSON.stringify(x));
 
-    // スタッフ・時給・交通費は通常同期ではクラウドを正として取得する。
-    // 別端末の空欄データでクラウドを上書きしない。
+    // 高根公団版はクラウドのスタッフ一覧を常に正とする。
+    // クラウドが空でも端末内の古いスタッフを自動アップロードしない。
+    // これにより別店舗の名簿が混入するのを防ぐ。
     let sr=await fetchCloudStaff();
 
-    // クラウド側が完全に空の初回だけ、この端末の設定を登録する。
-    if(!sr.length){
-      await cloudSyncStaff();
-      sr=await fetchCloudStaff();
-    }
-
     let active=sr.filter(v=>v.active).map(v=>v.name);
-    if(active.length)localStorage.setItem(SK,JSON.stringify(active));
+    // 0人でも必ず反映して、端末内の古い名簿を消す。
+    localStorage.setItem(SK,JSON.stringify(active));
 
     let cw={},ct={};
     sr.forEach(v=>{
@@ -403,7 +401,7 @@ function renderWages(){let box=Q('wageList');if(!box)return;let w=wages();box.re
 async function saveWages(){let w=wages();document.querySelectorAll('#wageList input[data-staff]').forEach(inp=>{let v=Math.max(0,Number(inp.value)||0);if(v>0)w[inp.dataset.staff]=v;else delete w[inp.dataset.staff]});localStorage.setItem(WK,JSON.stringify(w));Q('wageMsg').textContent='時給を保存しました';allSummary();if(cloudSession()){try{await cloudSyncStaff();Q('wageMsg').textContent='時給を保存・クラウド同期しました ✓';cloudSetStatus('同期済み ✓')}catch(e){Q('wageMsg').textContent='時給は端末内に保存済み（クラウド同期は未完了）'}}}
 
 function migrateData(){try{
-  const MK='takanekodan_staff_migrated_v1';
+  const MK='takanekodan_staff_migrated_v2';
   let raw=localStorage.getItem(SK),a=raw?JSON.parse(raw):[];
   if(!Array.isArray(a))a=[];
   a=[...new Set(a.map(v=>String(v||'').trim()).filter(Boolean))];
@@ -439,7 +437,24 @@ function punchTime(kind){
   return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')
 }
 function stamp(k){let x=JSON.parse(localStorage.getItem(DK)||'{}'),s=Q('staff').value,day=iso(new Date());if(!s)return;x[s]??={};x[s][day]??=[];x[s][day].push([k,punchTime(k)]);localStorage.setItem(DK,JSON.stringify(x));render();allSummary();cloudAfterDayChange(s,day,x[s][day])}
-function mins(t){let a=t.split(':').map(Number);return a[0]*60+a[1]} function fmt(n){if(n==null)return'--';n=Math.max(0,Math.round(n));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')}
+function mins(t){let a=t.split(':').map(Number);return a[0]*60+a[1]}
+function fmt(n){
+  if(n==null)return'--';
+  n=Math.max(0,Math.round(n));
+  return (n/60).toFixed(2);
+}
+function workSpan(a){
+  let aa=(a||[]).map(v=>[v[0],roundPunchTime(v[0],v[1])]);
+  if(!aa.some(v=>v[0]==='退勤')){
+    let ins=[];aa.forEach((v,i)=>{if(v[0]==='出勤')ins.push(i)});
+    if(ins.length>=2)aa[ins[ins.length-1]][0]='退勤';
+  }
+  let ci=aa.find(v=>v[0]==='出勤');
+  let co=[...aa].reverse().find(v=>v[0]==='退勤');
+  if(!ci)return'--';
+  if(!co)return ci[1]+'〜勤務中';
+  return ci[1]+'〜'+co[1];
+}
 function roundPunchTime(kind,time){
   if(!time)return time;
   let [h,m]=time.split(':').map(Number);
@@ -492,8 +507,8 @@ function calc(a){
   return[work,b,overtime,night];
 }
 function range(){let n=new Date(),s=n.getDate()>=21?new Date(n.getFullYear(),n.getMonth(),21):new Date(n.getFullYear(),n.getMonth()-1,21);return[s,new Date(s.getFullYear(),s.getMonth()+1,20)]}
-function render(){let x=JSON.parse(localStorage.getItem(DK)||'{}'),s=Q('staff').value,d=iso(new Date()),a=x[s]?.[d]||[];Q('log').innerHTML=a.map(v=>'<p>'+v[0]+' <b>'+v[1]+'</b></p>').join('')||'<p>まだ打刻はありません</p>';Q('status').textContent=a.length?'最後：'+a[a.length-1][0]:'未打刻';let c=calc(a);['work','brk','ot','night'].forEach((z,i)=>Q(z).textContent=fmt(c[i]));month(x,s)}
-function month(x,s){let [st,en]=range(),d=new Date(st),rows=[],tot=[0,0,0,0];Q('period').textContent=iso(st)+' ～ '+iso(en);while(d<=en){let k=iso(d),a=x[s]?.[k]||[];if(a.length){let c=calc(a);rows.push('<tr><td>'+(d.getMonth()+1)+'/'+d.getDate()+'</td>'+c.map(v=>'<td>'+fmt(v)+'</td>').join('')+'</tr>');c.forEach((v,i)=>{if(v!=null)tot[i]+=v})}d.setDate(d.getDate()+1)}Q('monthly').innerHTML=rows.join('')||'<tr><td colspan="5">この期間の打刻はありません</td></tr>';Q('totals').innerHTML='<tr class="total"><td>合計</td>'+tot.map(v=>'<td>'+fmt(v)+'</td>').join('')+'</tr>'}
+function render(){let x=JSON.parse(localStorage.getItem(DK)||'{}'),s=Q('staff').value,d=iso(new Date()),a=x[s]?.[d]||[];Q('log').innerHTML=a.map(v=>'<p>'+v[0]+' <b>'+v[1]+'</b></p>').join('')||'<p>まだ打刻はありません</p>';Q('status').textContent=a.length?'最後：'+a[a.length-1][0]:'未打刻';if(Q('todaySpan'))Q('todaySpan').textContent='勤務時間：'+workSpan(a);let c=calc(a);['work','brk','ot','night'].forEach((z,i)=>Q(z).textContent=fmt(c[i]));month(x,s)}
+function month(x,s){let [st,en]=range(),d=new Date(st),rows=[],tot=[0,0,0,0];Q('period').textContent=iso(st)+' ～ '+iso(en);while(d<=en){let k=iso(d),a=x[s]?.[k]||[];if(a.length){let c=calc(a);rows.push('<tr><td>'+(d.getMonth()+1)+'/'+d.getDate()+'</td><td>'+workSpan(a)+'</td>'+c.map(v=>'<td>'+fmt(v)+'</td>').join('')+'</tr>');c.forEach((v,i)=>{if(v!=null)tot[i]+=v})}d.setDate(d.getDate()+1)}Q('monthly').innerHTML=rows.join('')||'<tr><td colspan="6">この期間の打刻はありません</td></tr>';Q('totals').innerHTML='<tr class="total"><td>合計</td><td>—</td>'+tot.map(v=>'<td>'+fmt(v)+'</td>').join('')+'</tr>'}
 function staffTotal(x,s){let [st,en]=range(),d=new Date(st),tot=[0,0,0,0],days=0;while(d<=en){let a=x[s]?.[iso(d)]||[];if(a.some(v=>v[0]==='出勤'))days++;let c=calc(a);c.forEach((v,i)=>{if(v!=null)tot[i]+=v});d.setDate(d.getDate()+1)}return [days,...tot]}
 
 function renderTransportRows(){
