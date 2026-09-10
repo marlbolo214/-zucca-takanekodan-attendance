@@ -141,9 +141,14 @@
 <div class="c no-print"><b>管理者メニュー</b><div id="pb" class="row"><input id="pin" type="password" placeholder="管理者PIN" style="flex:1"><button class="admin" onclick="login()">開く</button></div><div id="ad" class="hide"><div class="row"><input id="nn" placeholder="新しいスタッフ名" style="flex:1"><button class="admin" onclick="add()">追加</button></div><div id="list"></div><hr><b>クラウド保存</b>
 <p class="note">最初の1回だけ管理者が接続すると、この端末は以後自動で同期します。30秒ごとに他端末の打刻・時給・交通費も自動取得します。ネットが切れても端末内に保存し、復帰後に再同期します。</p>
 <div class="row"><input id="cloudEmail" type="email" placeholder="Supabase Authのメール" style="flex:1"><input id="cloudPassword" type="password" placeholder="パスワード" style="flex:1"></div>
+<div class="row" style="margin-top:10px"><select id="deviceType" style="flex:1"><option value="punch">打刻専用端末</option><option value="admin">管理者用端末</option></select></div>
 <div class="row actions"><button onclick="cloudLogin()">クラウド接続</button><button onclick="cloudTest()">接続テスト</button><button onclick="syncCloud(true)">今すぐ同期</button><button onclick="cloudLogout()">切断</button></div>
 <div id="cloudDiag" style="margin-top:10px;padding:12px;border:1px solid #d1d5db;border-radius:12px;background:#f8fafc;white-space:pre-wrap;font-size:13px;line-height:1.55">クラウド診断 v33：待機中</div>
 <p id="cloudAdminMsg" class="note" style="white-space:pre-wrap"></p>
+<hr><b>端末管理</b>
+<p class="note">登録台数はSupabaseの登録情報を基準に判定します。解除した端末の枠は再利用できます。</p>
+<div class="m"><div class="metric">打刻専用<b id="punchDeviceCount">-/1台</b></div><div class="metric">管理者用<b id="adminDeviceCount">-/2台</b></div></div>
+<div id="deviceList"></div><div class="row actions"><button onclick="refreshDevices()">登録台数を更新</button></div><p id="deviceMsg" class="note"></p>
 <hr><b>時給設定</b>
 <p class="note">スタッフごとに時給を登録します。給与目安＝実働×時給＋8時間超の25%割増＋深夜時間の25%割増。</p>
 <div id="wageList"></div>
@@ -180,7 +185,7 @@
 
 const PHOTO_STAFF=[];const Q=x=>document.getElementById(x),SK='takanekodan_staff_v2',DK='takanekodan_attendance_v1',DEF=[];
 const SUPABASE_URL="https://nahlnkatdmqinzaskbbp.supabase.co",SUPABASE_KEY="sb_publishable_SNf2lIkK9A5hffq6hHawjw_mogl4wgt";
-const CK='takanekodan_cloud_session_v1',DIRTY='takanekodan_dirty_days_v1',DELETED='takanekodan_deleted_staff_v1',WK='takanekodan_wages_v2',TK='takanekodan_transport_v2',TDK='takanekodan_daily_transport_v1';
+const CK='takanekodan_cloud_session_v1',DIRTY='takanekodan_dirty_days_v1',DELETED='takanekodan_deleted_staff_v1',WK='takanekodan_wages_v2',TK='takanekodan_transport_v2',TDK='takanekodan_daily_transport_v1',DEVICE_ID_KEY='takanekodan_device_id_v1',DEVICE_TYPE_KEY='takanekodan_device_type_v1';
 let cloudBusy=false;
 
 function cloudSetStatus(msg,ok=true){
@@ -191,6 +196,26 @@ function cloudSetStatus(msg,ok=true){
 }
 function cloudSession(){try{return JSON.parse(localStorage.getItem(CK)||'null')}catch(e){return null}}
 function saveCloudSession(s){if(s)localStorage.setItem(CK,JSON.stringify(s));else localStorage.removeItem(CK)}
+function deviceId(){let id=localStorage.getItem(DEVICE_ID_KEY);if(!id){id=globalThis.crypto?.randomUUID?.()||('device-'+Date.now()+'-'+Math.random().toString(36).slice(2));localStorage.setItem(DEVICE_ID_KEY,id)}return id}
+function selectedDeviceType(){return Q('deviceType')?.value||localStorage.getItem(DEVICE_TYPE_KEY)||'punch'}
+async function deviceRpc(name,body={}){let r=await authFetch('/rest/v1/rpc/'+name,{method:'POST',body:JSON.stringify(body)});return await r.json()}
+function deviceLimitMessage(err){let text=cloudErrorText(err);if(text.includes('DEVICE_LIMIT_PUNCH'))return '打刻専用端末は1台まで登録できます';if(text.includes('DEVICE_LIMIT_ADMIN'))return '管理者用端末は2台まで登録できます';if(text.includes('DEVICE_LIMIT_TOTAL'))return '端末は合計3台まで登録できます';return text}
+async function registerCurrentDevice(){
+  let type=selectedDeviceType(),label=(globalThis.navigator?.userAgent||'端末').slice(0,120);
+  await deviceRpc('register_device',{p_device_id:deviceId(),p_device_type:type,p_label:label});
+  localStorage.setItem(DEVICE_TYPE_KEY,type);
+  await refreshDevices();
+}
+async function refreshDevices(){
+  if(!cloudSession())return;
+  try{
+    let devices=await deviceRpc('list_devices'),punch=devices.filter(v=>v.device_type==='punch').length,admin=devices.filter(v=>v.device_type==='admin').length;
+    if(Q('punchDeviceCount'))Q('punchDeviceCount').textContent=punch+'/1台';if(Q('adminDeviceCount'))Q('adminDeviceCount').textContent=admin+'/2台';
+    let box=Q('deviceList');if(box){box.replaceChildren();devices.forEach(d=>{let row=document.createElement('div'),name=document.createElement('span'),button=document.createElement('button');row.className='sr';name.textContent=(d.device_type==='punch'?'打刻専用':'管理者用')+(d.device_id===deviceId()?'（この端末）':'');button.className='del';button.textContent='登録解除';button.onclick=()=>unregisterDevice(d.device_id);row.append(name,button);box.appendChild(row)})}
+    if(Q('deviceMsg'))Q('deviceMsg').textContent='合計 '+devices.length+'/3台';
+  }catch(e){if(Q('deviceMsg'))Q('deviceMsg').textContent='端末情報の取得に失敗しました：'+deviceLimitMessage(e)}
+}
+async function unregisterDevice(id){if(!confirm('この端末の登録を解除しますか？'))return;try{await deviceRpc('unregister_device',{p_device_id:id});await refreshDevices();if(id===deviceId())saveCloudSession(null);if(Q('deviceMsg'))Q('deviceMsg').textContent='端末登録を解除しました。登録枠を再利用できます。'}catch(e){alert('登録解除に失敗しました：'+deviceLimitMessage(e))}}
 async function authFetch(path,opt={}){let s=cloudSession();if(!s?.access_token)throw new Error('クラウド未接続');let h=Object.assign({'apikey':SUPABASE_KEY,'Authorization':'Bearer '+s.access_token,'Content-Type':'application/json'},opt.headers||{});let r=await fetch(SUPABASE_URL+path,Object.assign({},opt,{headers:h}));if(r.status===401&&s.refresh_token){let rr=await fetch(SUPABASE_URL+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{'apikey':SUPABASE_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:s.refresh_token})});if(rr.ok){let ns=await rr.json();saveCloudSession(ns);h.Authorization='Bearer '+ns.access_token;r=await fetch(SUPABASE_URL+path,Object.assign({},opt,{headers:h}))}}if(!r.ok){let t=await r.text();throw new Error(t||('HTTP '+r.status))}return r}
 function cloudErrorText(err){
   let raw=String(err?.message||err||'不明なエラー');
@@ -238,6 +263,7 @@ async function cloudLogin(){
     let session=JSON.parse(body);
     if(!session?.access_token)throw new Error('認証応答にaccess_tokenがありません: '+body);
     saveCloudSession(session);
+    await registerCurrentDevice();
     Q('cloudPassword').value='';
     cloudSetStatus('認証成功 ✓\n勤怠データを同期しています…');
     await syncCloud(true);
@@ -245,7 +271,8 @@ async function cloudLogin(){
     alert('クラウド接続・同期に成功しました');
   }catch(err){
     console.error('Cloud login error:',err);
-    let msg='接続失敗：'+cloudErrorText(err);
+    let msg='接続失敗：'+deviceLimitMessage(err);
+    saveCloudSession(null);
     cloudSetStatus(msg,false);
     alert(msg);
   }
@@ -629,7 +656,7 @@ function addEditRow(){window._zuccaEdit=window._zuccaEdit||[];window._zuccaEdit.
 function deleteEditRow(i){if(!confirm('この打刻を削除しますか？'))return;window._zuccaEdit.splice(i,1);renderEditRows()}
 function saveEdits(){
   defaultEditDate();let s=Q('editStaff').value,d=Q('editDate').value;if(!s||!d)return;let a=(window._zuccaEdit||[]).filter(v=>v[0]&&v[1]).map(v=>[v[0],roundPunchTime(v[0],v[1])]);window._zuccaEdit=a;let x=JSON.parse(localStorage.getItem(DK)||'{}');x[s]??={};if(a.length)x[s][d]=a;else if(x[s])delete x[s][d];localStorage.setItem(DK,JSON.stringify(x));Q('editMsg').textContent='保存しました。実働・残業・深夜・月間合計を再計算しました。';render();allSummary();cloudAfterDayChange(s,d,a)}
-function login(){if(Q('pin').value==='1234'){Q('pb').classList.add('hide');Q('ad').classList.remove('hide');defaultEditDate();rs();rl();renderWages();allSummary()}else alert('PINが違います')}
+function login(){if(Q('pin').value==='1234'){Q('pb').classList.add('hide');Q('ad').classList.remove('hide');defaultEditDate();rs();rl();renderWages();allSummary();refreshDevices()}else alert('PINが違います')}
 function add(){let n=Q('nn').value.trim(),a=staff();if(!n||a.includes(n))return;a.push(n);localStorage.setItem(SK,JSON.stringify(a));unmarkStaffDeleted(n);Q('nn').value='';rs();cloudAddStaff(n)} function del(n){if(confirm(n+'を削除しますか？')){localStorage.setItem(SK,JSON.stringify(staff().filter(x=>x!==n)));rs();cloudDeleteStaff(n)}}
 async function renameStaff(oldn){
   let newn=prompt('新しいスタッフ名を入力してください',oldn);if(newn==null)return;newn=newn.trim();
@@ -656,6 +683,7 @@ function rl(){const box=Q('list');box.replaceChildren();staff().forEach(n=>{cons
 function csv(){let x=JSON.parse(localStorage.getItem(DK)||'{}'),w=wages(),r=range(),lines=['スタッフ,期間,出勤日数,時給,実働,休憩,残業,残業割増額,深夜,深夜割増額,交通費,支給額'];staff().forEach(s=>{let t=staffTotal(x,s),rate=Number(w[s]||0),p=payrollDetail(t,rate,t[5]);lines.push('"'+s.replace(/"/g,'""')+'","'+iso(r[0])+'～'+iso(r[1])+'",'+t[0]+','+rate+','+fmt(t[1])+','+fmt(t[2])+','+fmt(t[3])+','+Math.round(p.overtimePremium)+','+fmt(t[4])+','+Math.round(p.nightPremium)+','+Math.round(p.transport)+','+Math.round(p.total))});let blob=new Blob(['\ufeff'+lines.join('\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='高根公団ZUCCA勤怠給与_'+iso(r[0])+'_'+iso(r[1])+'.csv';a.click();URL.revokeObjectURL(a.href)}
 function printReport(){Q('printAll').classList.remove('hide');window.print();setTimeout(()=>Q('printAll').classList.add('hide'),500)}
 function init(){
+  let savedDeviceType=localStorage.getItem(DEVICE_TYPE_KEY);if(savedDeviceType&&Q('deviceType'))Q('deviceType').value=savedDeviceType;
   const st=Q('staff');
   if(st){
     st.addEventListener('change',render);
@@ -668,7 +696,7 @@ function init(){
 
   rs();
 
-  if(cloudSession())syncCloud();
+  if(cloudSession())registerCurrentDevice().then(()=>syncCloud()).catch(e=>{saveCloudSession(null);cloudSetStatus('端末登録に失敗しました：'+deviceLimitMessage(e),false)});
 
   window.addEventListener('focus',()=>{
     if(cloudSession())syncCloud();
