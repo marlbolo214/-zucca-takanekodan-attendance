@@ -147,7 +147,7 @@
 <p id="cloudAdminMsg" class="note" style="white-space:pre-wrap"></p>
 <hr><b>端末管理</b>
 <p class="note">登録台数はSupabaseの登録情報を基準に判定します。解除した端末の枠は再利用できます。</p>
-<div class="m"><div class="metric">打刻専用<b id="punchDeviceCount">-/1台</b></div><div class="metric">管理者用<b id="adminDeviceCount">-/2台</b></div></div>
+<div class="m"><div class="metric">打刻専用<b id="punchDeviceCount">-/1台</b></div><div class="metric">管理者用<b id="adminDeviceCount">-/3台</b></div></div>
 <div id="deviceList"></div><div class="row actions"><button onclick="refreshDevices()">登録台数を更新</button></div><p id="deviceMsg" class="note"></p>
 <hr><b>時給設定</b>
 <p class="note">スタッフごとに時給を登録します。給与目安＝実働×時給＋8時間超の25%割増＋深夜時間の25%割増。</p>
@@ -199,7 +199,7 @@ function saveCloudSession(s){if(s)localStorage.setItem(CK,JSON.stringify(s));els
 function deviceId(){let id=localStorage.getItem(DEVICE_ID_KEY);if(!id){id=globalThis.crypto?.randomUUID?.()||('device-'+Date.now()+'-'+Math.random().toString(36).slice(2));localStorage.setItem(DEVICE_ID_KEY,id)}return id}
 function selectedDeviceType(){return Q('deviceType')?.value||localStorage.getItem(DEVICE_TYPE_KEY)||'punch'}
 async function deviceRpc(name,body={}){let r=await authFetch('/rest/v1/rpc/'+name,{method:'POST',body:JSON.stringify(body)});return await r.json()}
-function deviceLimitMessage(err){let text=cloudErrorText(err);if(text.includes('DEVICE_LIMIT_PUNCH'))return '打刻専用端末は1台まで登録できます';if(text.includes('DEVICE_LIMIT_ADMIN'))return '管理者用端末は2台まで登録できます';if(text.includes('DEVICE_LIMIT_TOTAL'))return '端末は合計3台まで登録できます';return text}
+function deviceLimitMessage(err){let text=cloudErrorText(err);if(text.includes('DEVICE_LIMIT_PUNCH'))return '打刻専用端末は1台まで登録できます';if(text.includes('DEVICE_LIMIT_ADMIN'))return '管理者用端末は3台まで登録できます';if(text.includes('DEVICE_LIMIT_TOTAL'))return '端末は合計4台まで登録できます';return text}
 async function registerCurrentDevice(){
   let type=selectedDeviceType(),label=(globalThis.navigator?.userAgent||'端末').slice(0,120);
   await deviceRpc('register_device',{p_device_id:deviceId(),p_device_type:type,p_label:label});
@@ -210,9 +210,9 @@ async function refreshDevices(){
   if(!cloudSession())return;
   try{
     let devices=await deviceRpc('list_devices'),punch=devices.filter(v=>v.device_type==='punch').length,admin=devices.filter(v=>v.device_type==='admin').length;
-    if(Q('punchDeviceCount'))Q('punchDeviceCount').textContent=punch+'/1台';if(Q('adminDeviceCount'))Q('adminDeviceCount').textContent=admin+'/2台';
+    if(Q('punchDeviceCount'))Q('punchDeviceCount').textContent=punch+'/1台';if(Q('adminDeviceCount'))Q('adminDeviceCount').textContent=admin+'/3台';
     let box=Q('deviceList');if(box){box.replaceChildren();devices.forEach(d=>{let row=document.createElement('div'),name=document.createElement('span'),button=document.createElement('button');row.className='sr';name.textContent=(d.device_type==='punch'?'打刻専用':'管理者用')+(d.device_id===deviceId()?'（この端末）':'');button.className='del';button.textContent='登録解除';button.onclick=()=>unregisterDevice(d.device_id);row.append(name,button);box.appendChild(row)})}
-    if(Q('deviceMsg'))Q('deviceMsg').textContent='合計 '+devices.length+'/3台';
+    if(Q('deviceMsg'))Q('deviceMsg').textContent='合計 '+devices.length+'/4台';
   }catch(e){if(Q('deviceMsg'))Q('deviceMsg').textContent='端末情報の取得に失敗しました：'+deviceLimitMessage(e)}
 }
 async function unregisterDevice(id){if(!confirm('この端末の登録を解除しますか？'))return;try{await deviceRpc('unregister_device',{p_device_id:id});await refreshDevices();if(id===deviceId())saveCloudSession(null);if(Q('deviceMsg'))Q('deviceMsg').textContent='端末登録を解除しました。登録枠を再利用できます。'}catch(e){alert('登録解除に失敗しました：'+deviceLimitMessage(e))}}
