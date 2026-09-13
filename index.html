@@ -72,9 +72,6 @@
 
 
 .pTransport{background:#f0fdf4;color:#15803d}
-#transportRows .staffrow{display:grid;grid-template-columns:1fr minmax(130px,220px);align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid #e5e7eb}
-#transportRows input{width:100%;box-sizing:border-box}
-
 @media print{body{background:white}.top,.no-print{display:none!important}.c{box-shadow:none;border:0;margin:0;padding:8px}.w{max-width:none;padding:0}}.timeSelectWrap{display:grid;grid-template-columns:minmax(88px,1fr) auto minmax(88px,1fr) auto;gap:6px;align-items:center;flex:1}
 .timeSelectWrap select{width:100%;min-width:0;text-align:center;font-size:18px;font-weight:700;padding:13px 8px}
 .timeUnit{font-size:15px;font-weight:800;color:#4b5563;white-space:nowrap}
@@ -385,39 +382,12 @@ async function cloudDeleteStaff(n){markStaffDeleted(n);if(!cloudSession())return
 function wages(){try{let w=JSON.parse(localStorage.getItem(WK)||'{}');return w&&typeof w==='object'?w:{}}catch(e){return {}}}
 function yen(n){return '¥'+Math.round(Number(n)||0).toLocaleString('ja-JP')}
 
-function transports(){try{return JSON.parse(localStorage.getItem(TK)||'{}')}catch(e){return {}}}
 function dailyTransports(){try{let x=JSON.parse(localStorage.getItem(TDK)||'{}');return x&&typeof x==='object'?x:{}}catch(e){return {}}}
 function saveDailyTransports(x){localStorage.setItem(TDK,JSON.stringify(x))}
 function hasDailyTransport(s,d,x=dailyTransports()){return Object.prototype.hasOwnProperty.call(x[s]||{},d)}
 function dailyTransportValue(s,d,x=dailyTransports()){return hasDailyTransport(s,d,x)?x[s][d]:null}
 function setDailyTransport(s,d,value){let x=dailyTransports();x[s]??={};x[s][d]=value==null?null:Math.max(0,Math.round(Number(value)||0));saveDailyTransports(x);return x[s][d]}
-function ensureDailyTransport(s,d){if(!hasDailyTransport(s,d))setDailyTransport(s,d,Number(transports()[s]||0));return dailyTransportValue(s,d)}
 function transportText(value){return value==null?'未設定':yen(value)}
-function saveTransport(name,val){
-  let x=transports(),n=Math.max(0,Number(val||0));
-  if(n>0)x[name]=n;else delete x[name];
-  localStorage.setItem(TK,JSON.stringify(x));
-  allSummary();
-}
-async function saveTransports(){
-  let x=transports();
-  document.querySelectorAll('#transportRows input[data-staff]').forEach(inp=>{
-    let v=Math.max(0,Number(inp.value)||0);
-    if(v>0)x[inp.dataset.staff]=v;else delete x[inp.dataset.staff];
-  });
-  localStorage.setItem(TK,JSON.stringify(x));
-  allSummary();
-  if(Q('transportMsg'))Q('transportMsg').textContent='交通費を保存しました';
-  if(cloudSession()){
-    try{
-      await cloudSyncStaff();
-      if(Q('transportMsg'))Q('transportMsg').textContent='交通費を保存・クラウド同期しました ✓';
-      cloudSetStatus('同期済み ✓');
-    }catch(e){
-      if(Q('transportMsg'))Q('transportMsg').textContent='交通費は端末内に保存済み（クラウド同期は未完了）';
-    }
-  }
-}
 
 function payrollDetail(t,wage,transportTotal=0){
   wage=Number(wage)||0;
@@ -561,18 +531,6 @@ function render(){let x=JSON.parse(localStorage.getItem(DK)||'{}'),s=Q('staff').
 function month(x,s){let [st,en]=range(),d=new Date(st),rows=[],tot=[0,0,0,0],transportTotal=0,daily=dailyTransports();Q('period').textContent=iso(st)+' ～ '+iso(en);while(d<=en){let k=iso(d),a=x[s]?.[k]||[];if(a.length){let c=calc(a),cost=dailyTransportValue(s,k,daily);rows.push('<tr><td>'+(d.getMonth()+1)+'/'+d.getDate()+'</td><td>'+workSpan(a)+'</td>'+c.map(v=>'<td>'+fmt(v)+'</td>').join('')+'<td>'+transportText(cost)+'</td></tr>');c.forEach((v,i)=>{if(v!=null)tot[i]+=v});if(cost!=null)transportTotal+=Number(cost)||0}d.setDate(d.getDate()+1)}Q('monthly').innerHTML=rows.join('')||'<tr><td colspan="7">この期間の打刻はありません</td></tr>';Q('totals').innerHTML='<tr class="total"><td>合計</td><td>—</td>'+tot.map(v=>'<td>'+fmt(v)+'</td>').join('')+'<td>'+yen(transportTotal)+'</td></tr>'}
 function staffTotal(x,s){let [st,en]=range(),d=new Date(st),tot=[0,0,0,0],days=0,transportTotal=0,transportSetDays=0,daily=dailyTransports();while(d<=en){let day=iso(d),a=x[s]?.[day]||[];if(a.some(v=>v[0]==='出勤'))days++;let c=calc(a);c.forEach((v,i)=>{if(v!=null)tot[i]+=v});let cost=dailyTransportValue(s,day,daily);if(a.length&&cost!=null){transportTotal+=Number(cost)||0;transportSetDays++}d.setDate(d.getDate()+1)}return [days,...tot,transportTotal,transportSetDays]}
 
-function renderTransportRows(){
-  let box=Q('transportRows'); if(!box)return;
-  let x=transports(); box.replaceChildren();
-  staff().forEach(n=>{
-    let row=document.createElement('div');row.className='staffrow';
-    let sp=document.createElement('span');sp.textContent=n;
-    let inp=document.createElement('input');inp.type='number';inp.min='0';inp.step='1';inp.inputMode='numeric';
-    inp.value=x[n]||'';inp.placeholder='1日交通費';inp.dataset.staff=n;
-    row.append(sp,inp);box.appendChild(row);
-  });
-}
-
 function allSummary(){
   let x=JSON.parse(localStorage.getItem(DK)||'{}'),w=wages();
   let grand=0,sumBase=0,sumOt=0,sumNight=0,sumTransport=0,tableRows=[],cards=[];
@@ -673,7 +631,7 @@ async function renameStaff(oldn){
   let newn=prompt('新しいスタッフ名を入力してください',oldn);if(newn==null)return;newn=newn.trim();
   if(!newn||newn===oldn)return;
   let a=staff();if(a.includes(newn)){alert('同じ名前のスタッフがすでにいます');return}
-  if(!confirm(oldn+' → '+newn+' に変更しますか？\n過去の勤怠データ・時給・交通費も新しい名前に統一します。'))return;
+  if(!confirm(oldn+' → '+newn+' に変更しますか？\n過去の勤怠データ・時給・日別交通費も新しい名前に統一します。'))return;
   try{
     let idx=a.indexOf(oldn);if(idx>=0)a[idx]=newn;localStorage.setItem(SK,JSON.stringify(a));
     let d=JSON.parse(localStorage.getItem(DK)||'{}');if(d[oldn]){d[newn]=d[oldn];delete d[oldn];localStorage.setItem(DK,JSON.stringify(d))}
