@@ -151,7 +151,7 @@
 <div id="wageList"></div>
 <div class="row actions"><button onclick="saveWages()">時給を保存</button></div>
 <p id="wageMsg" class="note"></p>
-<hr><b>打刻の修正・削除</b><p class="note">スタッフと日付を選んで、過去の出勤・休憩・退勤時刻を「時・分」で見やすく修正できます。分は15分単位（00・15・30・45）です。</p><div class="row"><select id="editStaff" style="flex:1"></select><input id="editDate" type="date" style="flex:1"><button class="admin" onclick="loadEdit()">読み込む</button></div><div id="editRows"></div><div class="row actions"><button onclick="addEditRow()">打刻を追加</button><button onclick="saveEdits()">修正を保存</button></div><p id="editMsg" class="note"></p><hr><b>締め日用・全スタッフ一覧</b>
+<hr><b>打刻・交通費の修正・削除</b><p class="note">スタッフと日付を選んで、過去の出勤・休憩・退勤時刻を「時・分」で見やすく修正できます。分は15分単位（00・15・30・45）です。入力し忘れた交通費も追加・変更できます。</p><div class="row"><select id="editStaff" style="flex:1" onchange="loadEdit()"></select><input id="editDate" type="date" style="flex:1" onchange="loadEdit()"><button class="admin" onclick="loadEdit()">読み込む</button></div><div id="editRows"></div><label for="editTransport"><b>この日の交通費（円）</b></label><input id="editTransport" type="number" min="0" step="1" inputmode="numeric" placeholder="交通費を入力"><p class="note">交通費がない日は0円、未設定に戻す場合は空欄にして「修正を保存」を押してください。</p><div class="row actions"><button onclick="addEditRow()">打刻を追加</button><button onclick="saveEdits()">修正を保存</button></div><p id="editMsg" class="note"></p><hr><b>締め日用・全スタッフ一覧</b>
 <p class="note">スタッフごとに給与内訳をカード表示。残業・深夜の割増金額も色分けして確認できます。</p>
 <div class="payDash">
   <div class="payLegend">
@@ -577,7 +577,7 @@ function allSummary(){
 }
 function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
 function defaultEditDate(){if(Q('editDate')&&!Q('editDate').value)Q('editDate').value=iso(new Date())}
-function loadEdit(){defaultEditDate();let x=JSON.parse(localStorage.getItem(DK)||'{}'),s=Q('editStaff').value,d=Q('editDate').value,a=(x[s]?.[d]||[]).map(v=>[v[0],v[1]]);window._zuccaEdit=a;renderEditRows();Q('editMsg').textContent=a.length?'打刻を読み込みました':'この日の打刻はありません。必要なら「打刻を追加」できます。'}
+function loadEdit(){defaultEditDate();let x=JSON.parse(localStorage.getItem(DK)||'{}'),s=Q('editStaff').value,d=Q('editDate').value,a=(x[s]?.[d]||[]).map(v=>[v[0],v[1]]);window._zuccaEdit=a;window._zuccaEditTarget={staff:s,date:d};let cost=dailyTransportValue(s,d);Q('editTransport').value=cost==null?'':String(cost);renderEditRows();Q('editMsg').textContent=a.length?'打刻・交通費を読み込みました':'この日の打刻はありません。必要なら「打刻を追加」できます。'}
 
 function setEditHour(i,h){
   let cur=(window._zuccaEdit[i]&&window._zuccaEdit[i][1])||'09:00';
@@ -624,8 +624,8 @@ function renderEditRows(){
 function addEditRow(){window._zuccaEdit=window._zuccaEdit||[];window._zuccaEdit.push(['出勤','09:00']);renderEditRows()}
 function deleteEditRow(i){if(!confirm('この打刻を削除しますか？'))return;window._zuccaEdit.splice(i,1);renderEditRows()}
 function saveEdits(){
-  defaultEditDate();let s=Q('editStaff').value,d=Q('editDate').value;if(!s||!d)return;let a=(window._zuccaEdit||[]).filter(v=>v[0]&&v[1]).map(v=>[v[0],roundPunchTime(v[0],v[1])]);window._zuccaEdit=a;let x=JSON.parse(localStorage.getItem(DK)||'{}');x[s]??={};if(a.length)x[s][d]=a;else if(x[s])delete x[s][d];localStorage.setItem(DK,JSON.stringify(x));Q('editMsg').textContent='保存しました。実働・残業・深夜・月間合計を再計算しました。';render();allSummary();cloudAfterDayChange(s,d,a)}
-function login(){if(Q('pin').value==='1234'){Q('pb').classList.add('hide');Q('ad').classList.remove('hide');defaultEditDate();rs();rl();renderWages();allSummary();refreshDevices()}else alert('PINが違います')}
+  defaultEditDate();let s=Q('editStaff').value,d=Q('editDate').value;if(!s||!d)return;if(window._zuccaEditTarget?.staff!==s||window._zuccaEditTarget?.date!==d){loadEdit();Q('editMsg').textContent='選択したスタッフ・日付を読み込みました。内容を確認してから保存してください。';return}let raw=Q('editTransport').value.trim(),cost=raw===''?null:Number(raw);if(cost!==null&&(!Number.isSafeInteger(cost)||cost<0)){Q('editMsg').textContent='交通費は0円以上の整数で入力してください。';Q('editTransport').focus();return}let a=(window._zuccaEdit||[]).filter(v=>v[0]&&v[1]).map(v=>[v[0],roundPunchTime(v[0],v[1])]);window._zuccaEdit=a;let x=JSON.parse(localStorage.getItem(DK)||'{}');x[s]??={};if(a.length)x[s][d]=a;else if(x[s])delete x[s][d];localStorage.setItem(DK,JSON.stringify(x));setDailyTransport(s,d,cost);Q('editMsg').textContent='打刻・交通費を保存しました。実働・残業・深夜・交通費・月間合計を再計算しました。';render();allSummary();cloudAfterDayChange(s,d,a)}
+function login(){if(Q('pin').value==='1234'){Q('pb').classList.add('hide');Q('ad').classList.remove('hide');defaultEditDate();rs();loadEdit();rl();renderWages();allSummary();refreshDevices()}else alert('PINが違います')}
 function add(){let n=Q('nn').value.trim(),a=staff();if(!n||a.includes(n))return;a.push(n);localStorage.setItem(SK,JSON.stringify(a));unmarkStaffDeleted(n);Q('nn').value='';rs();cloudAddStaff(n)} function del(n){if(confirm(n+'を削除しますか？')){localStorage.setItem(SK,JSON.stringify(staff().filter(x=>x!==n)));rs();cloudDeleteStaff(n)}}
 async function renameStaff(oldn){
   let newn=prompt('新しいスタッフ名を入力してください',oldn);if(newn==null)return;newn=newn.trim();
